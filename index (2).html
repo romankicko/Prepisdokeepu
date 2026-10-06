@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2F4BD8">
+<title>Prepis hlasu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&family=Literata:opsz,wght@7..72,400;7..72,500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #EAEFF6;
+  --panel: #FFFFFF;
+  --ink: #18233A;
+  --muted: #6B7891;
+  --live: #9AA6BA;
+  --accent: #2F4BD8;
+  --rec: #E0473B;
+  --line: #D3DBE7;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121826; --panel: #1B2335; --ink: #E7ECF5; --muted: #8D99B0;
+    --live: #5E6A82; --accent: #7E95FF; --rec: #FF6B5E; --line: #2C3650;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121826; --panel: #1B2335; --ink: #E7ECF5; --muted: #8D99B0;
+  --live: #5E6A82; --accent: #7E95FF; --rec: #FF6B5E; --line: #2C3650;
+}
+*, *::before, *::after { box-sizing: inherit; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: "Manrope", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  display: flex; flex-direction: column;
+}
+main {
+  flex: 1; display: flex; flex-direction: column; gap: 16px;
+  width: 100%; max-width: 680px; margin: 0 auto; padding: 20px 18px 24px;
+  min-height: 0;
+}
+header { display: flex; align-items: center; justify-content: space-between; }
+h1 { font-size: 1.5rem; font-weight: 800; margin: 0; letter-spacing: -0.02em; }
+.gear {
+  background: none; border: 1px solid var(--line); color: var(--ink);
+  border-radius: 999px; padding: 8px 14px; font: inherit; font-size: .9rem; cursor: pointer;
+}
+details.nastavenia {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px;
+}
+details.nastavenia summary { cursor: pointer; font-weight: 600; }
+label { display: block; font-size: .85rem; color: var(--muted); margin: 12px 0 6px; }
+input, select {
+  width: 100%; font: inherit; padding: 10px 12px; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--bg); color: var(--ink);
+}
+.pozn { font-size: .8rem; color: var(--muted); margin: 8px 0 0; line-height: 1.4; }
+
+.text {
+  flex: 1; min-height: 220px; overflow-y: auto;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 18px;
+  padding: 20px; font-family: "Literata", Georgia, serif; font-size: 1.2rem; line-height: 1.65;
+  white-space: pre-wrap; word-wrap: break-word;
+}
+.text .ziva { color: var(--live); }
+.text .prazdne { color: var(--muted); font-family: "Manrope", system-ui, sans-serif; font-size: 1rem; }
+
+.ovladanie { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.mic {
+  width: 96px; height: 96px; border-radius: 50%; border: none; cursor: pointer;
+  background: var(--accent); color: #fff; display: grid; place-items: center;
+  transition: transform .15s ease, background .2s ease;
+  box-shadow: 0 0 0 0 transparent;
+}
+.mic:active { transform: scale(.95); }
+.mic:focus-visible { outline: 3px solid var(--ink); outline-offset: 4px; }
+.mic.nahrava { background: var(--rec); animation: pulz 1.6s ease-out infinite; }
+@keyframes pulz {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--rec) 45%, transparent); }
+  100% { box-shadow: 0 0 0 26px transparent; }
+}
+@media (prefers-reduced-motion: reduce) { .mic.nahrava { animation: none; } }
+.mic svg { width: 40px; height: 40px; }
+.stav { font-size: .95rem; color: var(--muted); min-height: 1.4em; text-align: center; }
+.stav.chyba { color: var(--rec); }
+
+.akcie { display: flex; gap: 10px; }
+.akcie button {
+  flex: 1; font: inherit; font-weight: 600; padding: 12px; border-radius: 12px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+}
+.akcie button.hlavne { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.akcie button:disabled { opacity: .4; cursor: default; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Prepis hlasu</h1>
+  </header>
+
+  <details class="nastavenia" id="nastavenia">
+    <summary>Nastavenia</summary>
+    <label for="kluc">ElevenLabs API kľúč</label>
+    <input id="kluc" type="password" autocomplete="off" placeholder="sk_…">
+    <label for="jazyk">Jazyk reči</label>
+    <select id="jazyk">
+      <option value="sk">Slovenčina</option>
+      <option value="cs">Čeština</option>
+      <option value="en">Angličtina</option>
+      <option value="de">Nemčina</option>
+      <option value="">Rozpoznať automaticky</option>
+    </select>
+    <p class="pozn">Kľúč sa uloží len v tomto prehliadači na tvojom zariadení.</p>
+  </details>
+
+  <div class="text" id="text" aria-live="polite"><span class="prazdne">Ťukni na mikrofón a začni hovoriť. Text sa bude objavovať priebežne.</span></div>
+
+  <div class="ovladanie">
+    <button class="mic" id="mic" aria-label="Spustiť nahrávanie">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="ikona">
+        <rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="17" x2="12" y2="22"/>
+      </svg>
+    </button>
+    <div class="stav chyba" id="stav">Skript sa nespustil. Súbor sa asi nenahral celý alebo hosting blokuje JavaScript.</div>
+  </div>
+
+  <div class="akcie">
+    <button class="hlavne" id="zdielat" disabled>Zdieľať</button>
+    <button id="kopirovat" disabled>Kopírovať</button>
+    <button id="vymazat" disabled>Vymazať</button>
+  </div>
+</main>
+
+<script>
+window.onerror = (msg, src, riadok) => { const el = document.getElementById('stav'); if (el) { el.textContent = 'Chyba v aplikácii: ' + msg + ' (riadok ' + riadok + ')'; el.classList.add('chyba'); } };
+window.onunhandledrejection = (e) => window.onerror(String(e.reason && e.reason.message || e.reason), '', '?');
+const $ = (id) => document.getElementById(id);
+const IKONA_MIC = '<rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="17" x2="12" y2="22"/>';
+const IKONA_STOP = '<rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/>';
+
+let ws = null, audioCtx = null, stream = null, procesor = null, zdroj = null;
+let bezi = false, hotovy = "", priebezny = "";
+
+// --- Uložené nastavenia ---
+function nacitaj(k) { try { return localStorage.getItem(k) || ""; } catch { return ""; } }
+function uloz(k, v) { try { localStorage.setItem(k, v); } catch {} }
+$("kluc").value = nacitaj("el_kluc");
+$("jazyk").value = nacitaj("el_jazyk") || "sk";
+if (!$("kluc").value) $("nastavenia").open = true;
+$("kluc").addEventListener("change", e => uloz("el_kluc", e.target.value.trim()));
+$("jazyk").addEventListener("change", e => uloz("el_jazyk", e.target.value));
+
+// --- Zobrazenie ---
+function vykresli() {
+  const box = $("text");
+  if (!hotovy && !priebezny) {
+    box.innerHTML = '<span class="prazdne">' + (bezi ? "Počúvam…" : "Ťukni na mikrofón a začni hovoriť. Text sa bude objavovať priebežne.") + "</span>";
+  } else {
+    box.textContent = hotovy;
+    const s = document.createElement("span");
+    s.className = "ziva"; s.textContent = priebezny;
+    box.appendChild(s);
+  }
+  box.scrollTop = box.scrollHeight;
+  $("kopirovat").disabled = !hotovy;
+  $("zdielat").disabled = !hotovy;
+  $("vymazat").disabled = !hotovy && !priebezny;
+}
+function stav(t, chyba = false) { $("stav").textContent = t; $("stav").classList.toggle("chyba", chyba); }
+function tlacidlo() {
+  $("mic").classList.toggle("nahrava", bezi);
+  $("ikona").innerHTML = bezi ? IKONA_STOP : IKONA_MIC;
+  $("mic").setAttribute("aria-label", bezi ? "Zastaviť nahrávanie" : "Spustiť nahrávanie");
+}
+
+// --- Prevod zvuku na 16 kHz PCM v base64 ---
+function naBase64(float32, vstupnaFrekvencia) {
+  const pomer = vstupnaFrekvencia / 16000;
+  const dlzka = Math.floor(float32.length / pomer);
+  const pcm = new Int16Array(dlzka);
+  for (let i = 0; i < dlzka; i++) {
+    const s = Math.max(-1, Math.min(1, float32[Math.floor(i * pomer)]));
+    pcm[i] = s < 0 ? s * 32768 : s * 32767;
+  }
+  const bajty = new Uint8Array(pcm.buffer);
+  let bin = "";
+  for (let i = 0; i < bajty.length; i += 0x8000) {
+    bin += String.fromCharCode.apply(null, bajty.subarray(i, i + 0x8000));
+  }
+  return btoa(bin);
+}
+function posli(base64, commit = false) {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ message_type: "input_audio_chunk", audio_base_64: base64, commit, sample_rate: 16000 }));
+  }
+}
+
+// --- Spustenie ---
+async function spusti() {
+  const kluc = $("kluc").value.trim();
+  if (!kluc) { $("nastavenia").open = true; stav("Najprv vlož API kľúč v nastaveniach.", true); return; }
+  uloz("el_kluc", kluc);
+  stav("Pripájam…");
+
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 }
+    });
+  } catch {
+    stav("Prehliadač nepovolil mikrofón. Povoľ ho v nastaveniach stránky.", true); return;
+  }
+
+  let token;
+  try {
+    const r = await fetch("https://api.elevenlabs.io/v1/single-use-token/realtime_scribe", {
+      method: "POST", headers: { "xi-api-key": kluc }
+    });
+    if (!r.ok) throw new Error(r.status === 401 ? "Neplatný API kľúč." : "Server vrátil chybu " + r.status + ".");
+    token = (await r.json()).token;
+  } catch (e) {
+    zastavMikrofon(); stav("Nepodarilo sa získať prístup: " + e.message, true); return;
+  }
+
+  const p = new URLSearchParams({
+    model_id: "scribe_v2_realtime", token, audio_format: "pcm_16000", commit_strategy: "vad"
+  });
+  if ($("jazyk").value) p.set("language_code", $("jazyk").value);
+  ws = new WebSocket("wss://api.elevenlabs.io/v1/speech-to-text/realtime?" + p);
+
+  ws.onmessage = (ev) => {
+    let d; try { d = JSON.parse(ev.data); } catch { return; }
+    switch (d.message_type) {
+      case "session_started": spustiMikrofon(); break;
+      case "partial_transcript": priebezny = d.text || ""; vykresli(); break;
+      case "committed_transcript":
+        if (d.text) hotovy += (hotovy && !hotovy.endsWith(" ") ? " " : "") + d.text;
+        priebezny = ""; vykresli(); break;
+      default:
+        if (String(d.message_type).includes("error")) stav("Chyba: " + (d.error || d.message || d.message_type), true);
+    }
+  };
+  ws.onerror = () => stav("Spojenie so serverom zlyhalo.", true);
+  ws.onclose = () => { if (bezi) { zastavMikrofon(); stav("Spojenie sa ukončilo."); } };
+
+  bezi = true; tlacidlo(); vykresli();
+}
+
+function spustiMikrofon() {
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  zdroj = audioCtx.createMediaStreamSource(stream);
+  procesor = audioCtx.createScriptProcessor(4096, 1, 1);
+  procesor.onaudioprocess = (e) => posli(naBase64(e.inputBuffer.getChannelData(0), audioCtx.sampleRate));
+  zdroj.connect(procesor);
+  procesor.connect(audioCtx.destination);
+  stav("Počúvam… ťukni znova pre stop");
+}
+
+function zastavMikrofon() {
+  try { procesor && procesor.disconnect(); zdroj && zdroj.disconnect(); } catch {}
+  try { audioCtx && audioCtx.close(); } catch {}
+  stream && stream.getTracks().forEach(t => t.stop());
+  procesor = zdroj = audioCtx = stream = null;
+  bezi = false; tlacidlo();
+}
+
+function zastav() {
+  zastavMikrofon();
+  posli("", true);
+  stav("Dokončujem…");
+  const s = ws;
+  setTimeout(() => {
+    try { s && s.close(); } catch {}
+    if (priebezny) { hotovy += (hotovy ? " " : "") + priebezny; priebezny = ""; }
+    ws = null; vykresli(); stav("Hotovo");
+  }, 1500);
+}
+
+$("mic").addEventListener("click", () => { stav("Ťuknutie prijaté…"); bezi ? zastav() : spusti(); });
+stav("Pripravené (verzia 3)");
+$("kopirovat").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText(hotovy); stav("Text skopírovaný"); }
+  catch { stav("Kopírovanie zlyhalo, označ text ručne.", true); }
+});
+$("zdielat").addEventListener("click", async () => {
+  if (navigator.share) {
+    try { await navigator.share({ title: "Prepis hlasu", text: hotovy }); stav("Odoslané"); }
+    catch (e) { if (e.name !== "AbortError") stav("Zdieľanie zlyhalo.", true); }
+  } else {
+    try { await navigator.clipboard.writeText(hotovy); stav("Zdieľanie tu nejde, text som skopíroval."); }
+    catch { stav("Zdieľanie nie je dostupné.", true); }
+  }
+});
+$("vymazat").addEventListener("click", () => { hotovy = ""; priebezny = ""; vykresli(); stav("Pripravené"); });
+</script>
+</body>
+</html>
