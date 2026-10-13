@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2F4BD8">
+<title>Zápis z nahrávky</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&family=Literata:opsz,wght@7..72,400;7..72,600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #EAEFF6; --panel: #FFFFFF; --ink: #18233A; --muted: #6B7891;
+  --accent: #2F4BD8; --ok: #1F8A5B; --err: #D23F33; --line: #D3DBE7;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121826; --panel: #1B2335; --ink: #E7ECF5; --muted: #8D99B0;
+    --accent: #7E95FF; --ok: #4CC38A; --err: #FF6B5E; --line: #2C3650;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121826; --panel: #1B2335; --ink: #E7ECF5; --muted: #8D99B0;
+  --accent: #7E95FF; --ok: #4CC38A; --err: #FF6B5E; --line: #2C3650;
+}
+*, *::before, *::after { box-sizing: inherit; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font-family: "Manrope", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+main { max-width: 720px; margin: 0 auto; padding: 20px 18px 40px; display: flex; flex-direction: column; gap: 16px; }
+h1 { font-size: 1.5rem; font-weight: 800; margin: 0; letter-spacing: -0.02em; }
+.podnadpis { margin: 4px 0 0; color: var(--muted); font-size: .95rem; }
+.karta { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 16px; }
+details summary { cursor: pointer; font-weight: 600; }
+label { display: block; font-size: .85rem; color: var(--muted); margin: 12px 0 6px; }
+input[type=password], input[type=text], select, textarea {
+  width: 100%; font: inherit; padding: 10px 12px; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--bg); color: var(--ink);
+}
+textarea { min-height: 70px; resize: vertical; }
+.pozn { font-size: .8rem; color: var(--muted); margin: 8px 0 0; line-height: 1.4; }
+
+.subor {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  border: 2px dashed var(--line); border-radius: 16px; padding: 28px 16px; text-align: center; cursor: pointer;
+  background: var(--panel);
+}
+.subor strong { font-size: 1.05rem; }
+.subor span { color: var(--muted); font-size: .9rem; word-break: break-all; }
+.subor input { display: none; }
+.subor.vybrany { border-color: var(--accent); border-style: solid; }
+
+button {
+  font: inherit; font-weight: 600; padding: 13px; border-radius: 12px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+}
+button.hlavne { background: var(--accent); color: #fff; border-color: var(--accent); font-size: 1.05rem; }
+button:disabled { opacity: .45; cursor: default; }
+.rad { display: flex; gap: 10px; flex-wrap: wrap; }
+.rad button { flex: 1 1 120px; }
+
+.kroky { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.kroky li { display: flex; align-items: center; gap: 10px; color: var(--muted); }
+.kroky li::before { content: ""; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--line); flex: none; }
+.kroky li.bezi { color: var(--ink); font-weight: 600; }
+.kroky li.bezi::before { border-color: var(--accent); border-top-color: transparent; animation: toc 0.9s linear infinite; }
+.kroky li.hotovo { color: var(--ok); }
+.kroky li.hotovo::before { background: var(--ok); border-color: var(--ok); }
+.kroky li.chyba { color: var(--err); }
+.kroky li.chyba::before { background: var(--err); border-color: var(--err); }
+@keyframes toc { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .kroky li.bezi::before { animation: none; } }
+.hlaska { color: var(--err); font-size: .9rem; margin: 10px 0 0; white-space: pre-wrap; }
+
+.zapis { font-family: "Literata", Georgia, serif; font-size: 1.05rem; line-height: 1.6; overflow-wrap: break-word; }
+.zapis h1, .zapis h2, .zapis h3 { font-family: "Manrope", system-ui, sans-serif; line-height: 1.25; margin: 1.1em 0 .4em; }
+.zapis h1 { font-size: 1.35rem; } .zapis h2 { font-size: 1.15rem; } .zapis h3 { font-size: 1rem; }
+.zapis > :first-child { margin-top: 0; }
+.zapis ul, .zapis ol { padding-left: 1.3em; margin: .4em 0; }
+.zapis p { margin: .5em 0; }
+.prepis { white-space: pre-wrap; font-size: .95rem; line-height: 1.55; max-height: 50vh; overflow-y: auto; margin-top: 12px; }
+.skryte { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Zápis z nahrávky</h1>
+    <p class="podnadpis">MP3 → prepis cez ElevenLabs → zápis od Claude</p>
+  </header>
+
+  <details class="karta" id="nastavenia">
+    <summary>Nastavenia</summary>
+    <label for="elKluc">ElevenLabs API kľúč</label>
+    <input id="elKluc" type="password" autocomplete="off" placeholder="sk_…">
+    <label for="anKluc">Anthropic API kľúč</label>
+    <input id="anKluc" type="password" autocomplete="off" placeholder="sk-ant-…">
+    <label for="jazyk">Jazyk nahrávky</label>
+    <select id="jazyk">
+      <option value="slk">Slovenčina</option>
+      <option value="ces">Čeština</option>
+      <option value="eng">Angličtina</option>
+      <option value="deu">Nemčina</option>
+      <option value="">Rozpoznať automaticky</option>
+    </select>
+    <label for="model">Model Claude</label>
+    <select id="model">
+      <option value="claude-sonnet-5-5">Claude Sonnet 5.5 (odporúčaný)</option>
+      <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (lacnejší)</option>
+      <option value="claude-opus-5-5">Claude Opus 5.5 (najpresnejší)</option>
+    </select>
+    <p class="pozn">Kľúče sa ukladajú len v tomto prehliadači na tvojom zariadení.</p>
+  </details>
+
+  <label class="subor" id="subor">
+    <input type="file" id="vstup" accept="audio/*,.mp3,.m4a,.wav,.ogg,.webm">
+    <strong id="suborNazov">Ťukni a vyber zvukový súbor</strong>
+    <span id="suborInfo">MP3, M4A, WAV…</span>
+  </label>
+
+  <div class="karta">
+    <label for="pokyny" style="margin-top:0">Doplňujúce pokyny pre zápis (nepovinné)</label>
+    <textarea id="pokyny" placeholder="napr. porada tímu, zameraj sa na úlohy a termíny"></textarea>
+  </div>
+
+  <button class="hlavne" id="spustit" disabled>Prepísať a urobiť zápis</button>
+
+  <div class="karta skryte" id="priebeh">
+    <ol class="kroky">
+      <li id="k1">Prepis zvuku (ElevenLabs)</li>
+      <li id="k2">Tvorba zápisu (Claude)</li>
+    </ol>
+    <p class="hlaska" id="hlaska"></p>
+  </div>
+
+  <section class="karta skryte" id="vysledok">
+    <div class="zapis" id="zapis"></div>
+    <div class="rad" style="margin-top:16px">
+      <button class="hlavne" id="zdielat">Zdieľať</button>
+      <button id="kopirovat">Kopírovať</button>
+      <button id="stiahnut">Stiahnuť .txt</button>
+    </div>
+    <p class="pozn" id="stav" aria-live="polite"></p>
+  </section>
+
+  <details class="karta skryte" id="prepisBox">
+    <summary>Celý prepis</summary>
+    <div class="prepis" id="prepis"></div>
+  </details>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let subor = null, zapisText = "";
+
+// --- Nastavenia uložené v prehliadači ---
+const ULOZ = ["elKluc", "anKluc", "jazyk", "model"];
+function nacitaj(k) { try { return localStorage.getItem("zapis_" + k); } catch { return null; } }
+function uloz(k, v) { try { localStorage.setItem("zapis_" + k, v); } catch {} }
+ULOZ.forEach(id => {
+  const v = nacitaj(id); if (v !== null) $(id).value = v;
+  $(id).addEventListener("change", () => uloz(id, $(id).value.trim()));
+});
+if (!$("elKluc").value || !$("anKluc").value) $("nastavenia").open = true;
+
+// --- Výber súboru ---
+$("vstup").addEventListener("change", (e) => {
+  subor = e.target.files[0] || null;
+  $("subor").classList.toggle("vybrany", !!subor);
+  $("suborNazov").textContent = subor ? subor.name : "Ťukni a vyber zvukový súbor";
+  $("suborInfo").textContent = subor ? (subor.size / 1048576).toFixed(1) + " MB" : "MP3, M4A, WAV…";
+  $("spustit").disabled = !subor;
+});
+
+function krok(id, stav) { $(id).className = stav; }
+
+// --- 1. Prepis cez ElevenLabs ---
+async function prepis(kluc) {
+  const skus = async (model) => {
+    const f = new FormData();
+    f.append("model_id", model);
+    f.append("file", subor, subor.name);
+    f.append("diarize", "true");          // rozlíšenie hovoriacich
+    f.append("tag_audio_events", "false");
+    if ($("jazyk").value) f.append("language_code", $("jazyk").value);
+    return fetch("https://api.elevenlabs.io/v1/speech-to-text", {
+      method: "POST", headers: { "xi-api-key": kluc }, body: f
+    });
+  };
+  let r = await skus("scribe_v2");
+  if (r.status === 400 || r.status === 422) r = await skus("scribe_v1"); // záloha pre starší model
+  const telo = await r.text();
+  if (!r.ok) {
+    if (r.status === 401) throw new Error("ElevenLabs: neplatný API kľúč alebo chýba oprávnenie Speech to Text.");
+    throw new Error("ElevenLabs vrátil chybu " + r.status + ":\n" + telo.slice(0, 400));
+  }
+  const d = JSON.parse(telo);
+  return sHovoriacimi(d) || d.text || "";
+}
+
+// Poskladá prepis po hovoriacich, ak ich ElevenLabs rozlíšil
+function sHovoriacimi(d) {
+  if (!Array.isArray(d.words) || !d.words.some(w => w.speaker_id)) return "";
+  const ids = [...new Set(d.words.filter(w => w.speaker_id).map(w => w.speaker_id))];
+  if (ids.length < 2) return "";
+  const meno = (id) => "Hovoriaci " + (ids.indexOf(id) + 1);
+  let out = "", aktualny = null, veta = "";
+  for (const w of d.words) {
+    if (w.type === "audio_event") continue;
+    if (w.speaker_id && w.speaker_id !== aktualny) {
+      if (veta.trim()) out += meno(aktualny) + ": " + veta.trim() + "\n\n";
+      aktualny = w.speaker_id; veta = "";
+    }
+    veta += w.text;
+  }
+  if (veta.trim()) out += meno(aktualny) + ": " + veta.trim() + "\n";
+  return out.trim();
+}
+
+// --- 2. Zápis cez Claude ---
+async function zapis(kluc, prepisText) {
+  const system = `Si skúsený zapisovateľ. Z prepisu nahrávky vytvor prehľadný zápis v slovenčine, aj keď je nahrávka v inom jazyku.
+Použi Markdown s touto štruktúrou (sekcie, ku ktorým v prepise nič nie je, vynechaj):
+# výstižný názov
+## Zhrnutie – 2 až 4 vety
+## Účastníci – ak sa dajú zistiť mená, inak „Hovoriaci 1, 2…“
+## Hlavné body – odrážky podľa tém
+## Rozhodnutia
+## Úlohy – kto, čo, do kedy (ak zaznelo)
+## Otvorené otázky
+Drž sa len toho, čo v prepise naozaj zaznelo, nič nevymýšľaj. Opravuj zjavné chyby prepisu podľa kontextu. Odpovedz len samotným zápisom.`;
+  const pokyny = $("pokyny").value.trim();
+  const obsah = (pokyny ? "Doplňujúce pokyny: " + pokyny + "\n\n" : "") + "Prepis:\n\n" + prepisText;
+
+  const r = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-api-key": kluc,
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true"
+    },
+    body: JSON.stringify({
+      model: $("model").value,
+      max_tokens: 4000,
+      system,
+      messages: [{ role: "user", content: obsah }]
+    })
+  });
+  const telo = await r.text();
+  if (!r.ok) {
+    if (r.status === 401) throw new Error("Anthropic: neplatný API kľúč.");
+    if (r.status === 400 && telo.includes("credit")) throw new Error("Anthropic: na účte nie je dostatok kreditu.");
+    throw new Error("Claude vrátil chybu " + r.status + ":\n" + telo.slice(0, 400));
+  }
+  const d = JSON.parse(telo);
+  return d.content.filter(b => b.type === "text").map(b => b.text).join("\n").trim();
+}
+
+// --- Jednoduché zobrazenie Markdownu ---
+function esc(s) { return s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+function inline(s) { return esc(s).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/(^|[^*])\*(?!\s)(.+?)\*/g, "$1<em>$2</em>"); }
+function markdown(md) {
+  let html = "", zoznam = null;
+  const zavri = () => { if (zoznam) { html += "</" + zoznam + ">"; zoznam = null; } };
+  for (const riadok of md.split("\n")) {
+    const t = riadok.trim();
+    let m;
+    if ((m = t.match(/^(#{1,3})\s+(.*)$/))) { zavri(); html += `<h${m[1].length}>${inline(m[2])}</h${m[1].length}>`; }
+    else if ((m = t.match(/^[-*•]\s+(.*)$/))) { if (zoznam !== "ul") { zavri(); html += "<ul>"; zoznam = "ul"; } html += "<li>" + inline(m[1]) + "</li>"; }
+    else if ((m = t.match(/^\d+[.)]\s+(.*)$/))) { if (zoznam !== "ol") { zavri(); html += "<ol>"; zoznam = "ol"; } html += "<li>" + inline(m[1]) + "</li>"; }
+    else if (t === "") { zavri(); }
+    else { zavri(); html += "<p>" + inline(t) + "</p>"; }
+  }
+  zavri();
+  return html;
+}
+function obycajnyText(md) { return md.replace(/^#{1,3}\s+/gm, "").replace(/\*\*(.+?)\*\*/g, "$1"); }
+
+// --- Hlavný postup ---
+$("spustit").addEventListener("click", async () => {
+  const el = $("elKluc").value.trim(), an = $("anKluc").value.trim();
+  if (!el || !an) { $("nastavenia").open = true; alert("Najprv vlož oba API kľúče v Nastaveniach."); return; }
+  uloz("elKluc", el); uloz("anKluc", an);
+
+  $("spustit").disabled = true;
+  $("priebeh").classList.remove("skryte");
+  $("vysledok").classList.add("skryte");
+  $("prepisBox").classList.add("skryte");
+  $("hlaska").textContent = "";
+  krok("k1", "bezi"); krok("k2", "");
+
+  let text;
+  try {
+    text = await prepis(el);
+    if (!text.trim()) throw new Error("Prepis je prázdny. Je v nahrávke počuť reč?");
+    krok("k1", "hotovo");
+    $("prepis").textContent = text;
+    $("prepisBox").classList.remove("skryte");
+  } catch (e) {
+    krok("k1", "chyba"); $("hlaska").textContent = e.message; $("spustit").disabled = false; return;
+  }
+
+  krok("k2", "bezi");
+  try {
+    zapisText = await zapis(an, text);
+    krok("k2", "hotovo");
+    $("zapis").innerHTML = markdown(zapisText);
+    $("vysledok").classList.remove("skryte");
+    $("vysledok").scrollIntoView({ behavior: "smooth", block: "start" });
+  } catch (e) {
+    krok("k2", "chyba");
+    $("hlaska").textContent = e.message + "\n\nPrepis je hotový, nájdeš ho nižšie. Môžeš skúsiť znova.";
+  }
+  $("spustit").disabled = false;
+});
+
+// --- Akcie s výsledkom ---
+function stav(t) { $("stav").textContent = t; }
+$("zdielat").addEventListener("click", async () => {
+  const t = obycajnyText(zapisText);
+  if (navigator.share) {
+    try { await navigator.share({ title: "Zápis", text: t }); } catch (e) { if (e.name !== "AbortError") stav("Zdieľanie zlyhalo."); }
+  } else { try { await navigator.clipboard.writeText(t); stav("Zdieľanie tu nejde, text som skopíroval."); } catch {} }
+});
+$("kopirovat").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText(obycajnyText(zapisText)); stav("Zápis skopírovaný."); }
+  catch { stav("Kopírovanie zlyhalo, označ text ručne."); }
+});
+$("stiahnut").addEventListener("click", () => {
+  const nazov = (subor ? subor.name.replace(/\.[^.]+$/, "") : "zapis") + " - zapis.txt";
+  const blob = new Blob([obycajnyText(zapisText) + "\n\n---\nPREPIS\n\n" + $("prepis").textContent], { type: "text/plain;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = nazov;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+});
+</script>
+</body>
+</html>
